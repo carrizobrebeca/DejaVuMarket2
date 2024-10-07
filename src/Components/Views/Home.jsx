@@ -1,11 +1,57 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+
 import { motion } from "framer-motion";
 import Navbar from "../Pages/Navbar";
 import hamburguesa from "../../assets/hamburguesabase.png";
 import Card from "../Pages/Card";
 
+import axios from "axios";
+
 const Home = () => {
+  const [allProductos, setAllProducts] = useState([]);
+  const [pizza, setPizza] = useState([]);
+  const [milanesa, setMilanesa] = useState([]);
+  const [guarnicion, setGuarnicion] = useState([]);
+  const [empanadas, setEmpanadas] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    const fetchProd = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await axios.get(`http://localhost:3001/products`);
+        const products = response.data;
+        setAllProducts(products);
+
+        const productsPizza = products.filter(
+          (producto) => producto.categoria === "Pizza"
+        );
+        setPizza(productsPizza);
+
+        const productsMilanesa = products.filter(
+          (producto) => producto.categoria === "Milanesa"
+        );
+        setMilanesa(productsMilanesa);
+
+        const productsGuarnicion = products.filter(
+          (producto) => producto.categoria === "Guarnicion"
+        );
+        setGuarnicion(productsGuarnicion);
+
+        const empanadasFilter = products.filter(
+          (producto) => producto.categoria === "Empanadas"
+        );
+        setEmpanadas(empanadasFilter);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProd();
+  }, []);
   const scrollAnimation = {
     hidden: { opacity: 0, y: 50 },
     visible: (delay = 0) => ({
@@ -19,7 +65,7 @@ const Home = () => {
     <>
       <Navbar />
       <section
-        className="hero-section relative text-white"
+        className="home-section relative text-white"
         style={{
           backgroundImage: "",
           backgroundColor: "black",
@@ -93,24 +139,74 @@ const Home = () => {
       </section>
 
       <motion.section
-        className="benefits bg-gray-100 text-center py-16 px-4"
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-        variants={scrollAnimation}
-        custom={1.8}
-      >
-        <h2 className="text-2xl md:text-3xl lg:text-4xl text-yellow-400 font-bold mt-0 mb-4">
-          Realizá tu pedido
-        </h2>
-        <div className="flex justify-center items-center space-x-4 flex-nowrap">
-          <Card />
-          <Card />
-          <Card />
-          <Card />
-        </div>
-      </motion.section>
+  className="benefits bg-gray-100 text-center py-16 px-4"
+  initial="hidden"
+  whileInView="visible"
+  viewport={{ once: true }}
+  variants={scrollAnimation}
+  custom={1.8}
+>
+  <h2 className="text-2xl md:text-3xl lg:text-4xl text-yellow-400 font-bold p-0 m-0 mb-4">
+    Realizá tu pedido
+  </h2>
 
+  {/* Contenedor de las cards */}
+  <div className="flex flex-wrap w-full max-w-5xl mx-auto item">
+    {pizza.length > 0 ? (
+      pizza.map((products) => (
+        <div className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 p-2" key={products.id}>
+          <Card item={products} />
+        </div>
+      ))
+    ) : (
+      <p>Parece que no hay productos...</p>
+    )}
+  </div>
+
+  <div className="flex flex-wrap w-full max-w-5xl mx-auto">
+    {milanesa.length > 0 ? (
+      milanesa.map((products) => (
+        <div className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 p-2" key={products.id}>
+          <Card item={products} />
+        </div>
+      ))
+    ) : (
+      <p>Parece que no hay productos...</p>
+    )}
+  </div>
+
+  <div className="flex flex-wrap w-full max-w-5xl mx-auto">
+    {guarnicion.length > 0 ? (
+      guarnicion.map((products) => (
+        <div className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 p-2" key={products.id}>
+          <Card item={products} />
+        </div>
+      ))
+    ) : (
+      <p>Parece que no hay productos...</p>
+    )}
+  </div>
+
+  <div className="flex justify-center items-center space-x-4 flex-nowrap">
+    <h3 className="bg-yellow-400 font-bold text-gray-500 p-2 rounded">
+      Empanadas al Horno. Precio: $900 x unidad | $5500 1/2 Docena
+    </h3>
+  </div>
+
+  <div className="flex flex-wrap w-full max-w-5xl mx-auto">
+    {empanadas.length > 0 ? (
+      empanadas.map((products) => (
+        <div className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 p-2" key={products.id}>
+          <Card item={products} />
+        </div>
+      ))
+    ) : (
+      <p>Parece que no hay productos...</p>
+    )}
+  </div>
+</motion.section>
+
+      
       <div></div>
       <motion.section
         className="benefits bg-black text-center py-16 pb-4 pt-4"
