@@ -6,7 +6,6 @@ export const fetchProducts = createAsyncThunk('products/fetchProducts', async ()
   return response.data;
 });
 
-// Slice de Redux
 const productSlice = createSlice({
   name: 'products',
   initialState: {
@@ -22,7 +21,7 @@ const productSlice = createSlice({
       })
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.allProducts = action.payload; // Asegúrate de que `allSuper` se actualice correctamente
+        state.allProducts = action.payload; 
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.status = 'failed';
