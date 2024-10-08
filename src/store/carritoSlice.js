@@ -4,6 +4,7 @@ const carritoSlice = createSlice({
   name: 'carrito',
   initialState: {
     items: [],
+    
   },
   reducers: {
     addCarrito: (state, action) => {

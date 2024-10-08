@@ -3,12 +3,16 @@ import deja from "../../assets/deja.png";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { removeCarrito, updateCantidad } from "../../store/carritoSlice";
+import { initMercadoPago, Wallet } from "@mercadopago/sdk-react";
+import axios from "axios";
 
 const Navbar = () => {
+  initMercadoPago(process.env.REACT_APP_MERCADO_PAGO_KEY, { locale: "es-AR" });
+  const [preferenceId, setPreferenceId] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const carrito = useSelector((state) => state.carrito.items);
   const sidebarRef = useRef(null);
-const dispatch = useDispatch();
+  const dispatch = useDispatch();
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
@@ -27,18 +31,40 @@ const dispatch = useDispatch();
   }, []);
 
   const total = carrito.reduce((acc, item) => {
-    return acc + item.precio * item.cantidad; 
+    return acc + item.precio * item.cantidad;
   }, 0);
 
   const handleCantidadChange = (id, cantidad) => {
-    const nuevaCantidad = Math.max(1, Number(cantidad)); 
-    dispatch(updateCantidad({ id, cantidad: nuevaCantidad }));  
+    const nuevaCantidad = Math.max(1, Number(cantidad));
+    dispatch(updateCantidad({ id, cantidad: nuevaCantidad }));
   };
 
   const handleEliminar = (id) => {
-    dispatch(removeCarrito({ id })); 
+    dispatch(removeCarrito({ id }));
   };
+  const createPreference = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/create_preference",
+        {
+          title: "Compra",
+          quantity: 1,
+          price: total,
+        }
+      );
 
+      const { id } = response.data;
+      return id;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleBuy = async () => {
+    const id = await createPreference();
+    if (id) {
+      setPreferenceId(id);
+    }
+  };
   return (
     <>
       <nav className="bg-black text-gray-800 p-4 flex justify-between items-center shadow-lg sticky top-0 z-50">
@@ -87,65 +113,84 @@ const dispatch = useDispatch();
         </div>
 
         <div
-  ref={sidebarRef}
-  className={`fixed top-0 right-1 h-full w-64 bg-black border-2 border-yellow-500 text-white transition-transform transform ${
-    isOpen ? "translate-x-0" : "translate-x-full"
-  }`}
->
-  <button
-    className="d-flex justify-items-end text-xl p-2 text-yellow-500 text-bold rounded-full hover:bg-yellow-500 hover:text-black transition"
-    onClick={toggleSidebar}
-  >
-    X
-  </button>
-  <div className="p-4 flex-1">
-  
-    <div className="overflow-y-auto pr-1" style={{ maxHeight: '80vh' }}>
-      {carrito.length === 0 ? (
-          <p>Parece que no agregaste productos al carrito...</p>
-        ) : (
-          <div>
-            <ul className="space-y-4">
-              {carrito.map((item) => (
-                <li
-                  key={item.id}
-                  className="flex flex-col sm:flex-row items-center bg-gray-100 p-4 rounded-lg shadow-md"
-                >
-                  <img
-                    src={item.imagen}
-                    alt={item.nombre}
-                    className="w-16 h-16 object-cover rounded-lg mb-4 sm:mb-0 sm:mr-4"
-                  />
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-500">{item.nombre}</h3>
-                    <p className="text-gray-600">Precio: ${item.precio}</p>
-                    <div className="flex items-center">
-                      <label htmlFor="" className="text-gray-600 mr-2">Cantidad:</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={item.cantidad} 
-                        onChange={(e) => handleCantidadChange(item.id, e.target.value)}
-                        className="w-20 p-1 border rounded text-gray-500"
-                      />
-                    </div>
+          ref={sidebarRef}
+          className={`fixed top-0 right-1 h-full w-74 bg-black border-2 border-yellow-500 text-white transition-transform transform ${
+            isOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <button
+            className="d-flex justify-items-end text-xl p-2 text-yellow-500 text-bold rounded-full hover:bg-yellow-500 hover:text-black transition"
+            onClick={toggleSidebar}
+          >
+            X
+          </button>
+          <div className="p-4 flex-1">
+            <div className="overflow-y-auto pr-1" style={{ maxHeight: "80vh" }}>
+              {carrito.length === 0 ? (
+                <p>Parece que no agregaste productos al carrito...</p>
+              ) : (
+                <div>
+                  <ul className="space-y-4">
+                    {carrito.map((item) => (
+                      <li
+                        key={item.id}
+                        className="flex flex-col sm:flex-row items-center bg-gray-100 p-4 rounded-lg shadow-md"
+                      >
+                        <img
+                          src={item.imagen}
+                          alt={item.nombre}
+                          className="w-16 h-16 object-cover rounded-lg mb-4 sm:mb-0 sm:mr-4"
+                        />
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-500">
+                            {item.nombre}
+                          </h3>
+                          <p className="text-gray-600">
+                            Precio: ${item.precio}
+                          </p>
+                          <div className="flex items-center">
+                            <label htmlFor="" className="text-gray-600 mr-2">
+                              Cantidad:
+                            </label>
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.cantidad}
+                              onChange={(e) =>
+                                handleCantidadChange(item.id, e.target.value)
+                              }
+                              className="w-20 p-1 border rounded text-gray-500"
+                            />
+                          </div>
+                        </div>
+                        <button
+                          className="text-red-600"
+                          onClick={() => handleEliminar(item.id)}
+                        >
+                          X
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-4">
+                    <h3 className="text-xl font-bold">Total: ${total}</h3>
+               
+                      <button onClick={handleBuy} className="mt-4 p-2 bg-blue-500 text-white rounded">
+                        Comprar
+                      </button>
+                   
                   </div>
-                  <button className="text-red-600" onClick={() => handleEliminar(item.id)}>X</button>
-                </li>
-              ))}
-            </ul>
-            <div className="mt-4">
-              <h3 className="text-xl font-bold">Total: ${total}</h3> 
-              <button className="mt-4 p-2 bg-blue-500 text-white rounded">
-                Comprar
-              </button>
+                  <div className="mt-4">
+                     {preferenceId && <Wallet
+                      initialization={{ preferenceId: preferenceId }}
+                      customization={{ texts: { valueProp: "smart_option" } }}
+                    />}   
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        )}
-      </div>
-    </div>
-</div>
-
+        </div>
       </nav>
     </>
   );
